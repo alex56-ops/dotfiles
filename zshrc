@@ -1,3 +1,7 @@
+# SSH Agent starten
+if [ -z "$SSH_AGENT_PID" ]; then
+    eval "$(ssh-agent -s)"
+fi
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 
 setopt EXTENDED_HISTORY      # Speichere Timestamps
