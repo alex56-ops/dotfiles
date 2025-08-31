@@ -90,5 +90,6 @@ rm_last3() {
 # Personal Homebrew
 export PATH="$HOME/.homebrew/bin:$PATH"
 
-
-. "$HOME/.local/bin/env"
+if [ -f "$HOME/.local/bin/env" ]; then
+    . "$HOME/.local/bin/env"
+fi
