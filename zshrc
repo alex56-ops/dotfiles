@@ -24,6 +24,11 @@ eval "$(/Users/abaer/.local/bin/mise activate zsh)"
 export TOKENIZERS_PARALLELISM=false
 eval "$(direnv hook zsh)"
 
+# kubectl completion und alias
+source <(kubectl completion zsh)
+alias k='kubectl'
+compdef k=kubectl
+
 # shell design
 PROMPT='[%F{green}%n%f]-(%F{blue}%~%f)-
 %F{red}└─▶%f '
