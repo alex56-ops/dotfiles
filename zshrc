@@ -22,6 +22,7 @@ fi
 export PATH="/opt/homebrew/bin:$PATH"
 eval "$(/Users/abaer/.local/bin/mise activate zsh)"
 export TOKENIZERS_PARALLELISM=false
+eval "$(direnv hook zsh)"
 
 # shell design
 PROMPT='[%F{green}%n%f]-(%F{blue}%~%f)-
