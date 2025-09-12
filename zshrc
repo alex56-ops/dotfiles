@@ -103,3 +103,5 @@ export PATH="$HOME/.homebrew/bin:$PATH"
 if [ -f "$HOME/.local/bin/env" ]; then
     . "$HOME/.local/bin/env"
 fi
+
+source ~/.shell-helpers/shell-helpers.bashrc
