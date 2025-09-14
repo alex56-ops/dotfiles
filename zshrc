@@ -48,4 +48,7 @@ if [ -f "$HOME/.local/bin/env" ]; then
     . "$HOME/.local/bin/env"
 fi
 
-source ~/.shell-helpers/shell-helpers.bashrc
+# Nur für User "abaer" ausführen
+if [[ "$USER" == "abaer" ]]; then
+    source ~/.shell-helpers/shell-helpers.bashrc
+fi
