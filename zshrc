@@ -34,9 +34,9 @@ compdef k=kubectl
 PROMPT='[%F{green}%n%f]-(%F{blue}%~%f)-
 %F{red}└─▶%f '
 
-# Embedding my own shell helpers
-if [ -d "$HOME/.shell-helpers" ]; then
-    for helper in "$HOME/.shell-helpers"/*; do
+# Embedding my own shell scripts
+if [ -d "$HOME/.shell-scripts" ]; then
+    for helper in "$HOME/.shell-scripts"/*.sh; do
         [ -r "$helper" ] && source "$helper"
     done
 fi
