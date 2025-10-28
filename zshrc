@@ -26,9 +26,8 @@ export TOKENIZERS_PARALLELISM=false
 eval "$(direnv hook zsh)"
 
 # kubectl completion und alias
-source <(kubectl completion zsh)
-alias k='kubectl'
-compdef k=kubectl
+alias k='kubectl $([ ! -z "$KUBECTL_NAMESPACE" ] && echo -n "--namespace=${KUBECTL_NAMESPACE}")'
+complete -F __start_kubectl k
 
 # shell design
 PROMPT='[%F{green}%n%f]-(%F{blue}%~%f)-
