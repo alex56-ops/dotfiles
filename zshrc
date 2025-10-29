@@ -27,7 +27,10 @@ eval "$(direnv hook zsh)"
 
 # kubectl completion und alias
 alias k='kubectl $([ ! -z "$KUBECTL_NAMESPACE" ] && echo -n "--namespace=${KUBECTL_NAMESPACE}")'
-complete -F __start_kubectl k
+if command -v kubectl &> /dev/null; then
+    source <(kubectl completion zsh)
+    compdef k=kubectl
+fi
 
 # shell design
 PROMPT='[%F{green}%n%f]-(%F{blue}%~%f)-
