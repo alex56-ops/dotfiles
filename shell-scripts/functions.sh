@@ -62,3 +62,30 @@ rm_last3() {
     mv "$temp_file" "$known_hosts"
     echo "Die letzten 3 Einträge wurden entfernt"
 }
+
+# Wazuh Package Search
+wazuh-find() {
+    if [ -z "$1" ]; then
+        echo "Usage: wazuh-find <package-name>"
+        echo "Example: wazuh-find wheel"
+        return 1
+    fi
+    
+    local db="/Library/Ossec/queue/syscollector/db/local.db"
+    
+    # Prüfe mit sudo ob die DB existiert
+    if ! sudo test -f "$db"; then
+        echo "Error: Wazuh database not found at $db"
+        return 1
+    fi
+    
+    echo "🔍 Searching for package: $1"
+    echo "─────────────────────────────────────────────────"
+    sudo sqlite3 -header -column "$db" \
+        "SELECT name, version, format, location FROM dbsync_packages WHERE name='$1';"
+    
+    # Zeige Anzahl der Treffer
+    local count=$(sudo sqlite3 "$db" "SELECT COUNT(*) FROM dbsync_packages WHERE name='$1';")
+    echo "─────────────────────────────────────────────────"
+    echo "✓ Found $count installation(s)"
+}
