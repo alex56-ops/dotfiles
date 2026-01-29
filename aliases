@@ -1,0 +1,13 @@
+alias prod='cd ~/repos/kubernetes-config/config/production-cluster/'
+alias staging='cd ~/repos/kubernetes-config/config/staging-cluster/'
+alias test='cd ~/repos/kubernetes-config/config/test-cluster/'
+
+# Teleport Login Alias
+alias teleport='tsh login --proxy=teleport.sys.mixxt.net:3080 --auth=passwordless'
+
+# Arch Linux Installation Aliases
+alias arch-install='source .env && export $(cat .env | xargs) && ansible-playbook -i setup.ini arch-baremetal-install.yml'
+alias k8s-setup='ansible-playbook -i setup.ini k8s-node-setup.yml'
+
+# Wazuh Control
+alias wazuh='sudo /Library/Ossec/bin/wazuh-control'
