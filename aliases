@@ -17,3 +17,6 @@ alias wazuh='sudo /Library/Ossec/bin/wazuh-control'
 # Archive
 alias -s {zip,ZIP}=unzip -l
 alias -s {tar.gz,tgz}=tar -tzf
+
+# Format JSON
+alias -s json='jq .'
