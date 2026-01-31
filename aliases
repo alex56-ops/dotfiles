@@ -11,3 +11,9 @@ alias k8s-setup='ansible-playbook -i setup.ini k8s-node-setup.yml'
 
 # Wazuh Control
 alias wazuh='sudo /Library/Ossec/bin/wazuh-control'
+
+# Suffix Aliases
+
+# Archive
+alias -s {zip,ZIP}=unzip -l
+alias -s {tar.gz,tgz}=tar -tzf
