@@ -8,7 +8,7 @@
 - Secrets gehören ausschließlich in Ansible-Vault-verschlüsselte vars-Dateien. Füge Secrets als Platzhalter ein — ich verschlüssele und befülle sie selbst.
 
 ## Git
-- Erstelle niemals eigenständig Commits. Committe nur nach expliziter Anweisung.
+- Erstelle niemals eigenständig Commits und biete es auch nicht an. Commits erfolgen ausschließlich über den `/ship` Skill.
 
 ## Ansible-Projekte
 - Die Projektstruktur ist essenziell. Halte dich strikt an die bestehende Verzeichnis- und Dateistruktur.
