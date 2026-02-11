@@ -89,3 +89,28 @@ wazuh-find() {
     echo "─────────────────────────────────────────────────"
     echo "✓ Found $count installation(s)"
 }
+
+# Selective Ansible Service Update on server03
+update() {
+    if [ -z "$1" ]; then
+        echo "Usage: update [--base|-b] <service1> [service2] [service3] ..."
+        echo "Example: update authelia immich"
+        echo "         update --base authelia  (includes baseline and docker)"
+        echo "         update -b authelia      (short form)"
+        return 1
+    fi
+
+    local skip_tags="--skip-tags baseline,docker"
+
+    if [ "$1" = "--base" ] || [ "$1" = "-b" ]; then
+        skip_tags=""
+        shift
+    fi
+
+    local services="['$(echo "$@" | sed "s/ /','/g")']"
+
+    ssh -t server03 \
+        "cd /mnt/ansible/repo && 
+         git pull && 
+         ansible-playbook playbooks/services/main-updating.yml -e \"deploy_only=$services\" $skip_tags"
+}
