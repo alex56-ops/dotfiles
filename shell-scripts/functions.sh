@@ -114,3 +114,44 @@ update() {
          git pull && 
          ansible-playbook playbooks/services/main-updating.yml -e \"deploy_only=$services\" $skip_tags"
 }
+
+# generate alphanumeric password and encrypt it with ansible
+encpass() {
+  local use_hex=0
+  local args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h) use_hex=1; shift ;;
+      *)  args+=("$1"); shift ;;
+    esac
+  done
+
+  if [ ${#args[@]} -ne 2 ]; then
+    echo "Usage: encpass [-h] <length> <name>"
+    return 1
+  fi
+
+  local length=${args[1]}
+  local name=${args[2]}
+  local password
+
+  if [ $use_hex -eq 1 ]; then
+    password=$(openssl rand -hex "$((length / 2))")
+  else
+    password=$(openssl rand -base64 64 | tr -dc 'a-zA-Z0-9' | cut -c1-"$length")
+  fi
+
+  ansible-vault encrypt_string "$password" --name "$name"
+}
+
+# decrypt ansible-vault encrypted string
+decpass() {
+  if [ $# -ne 1 ]; then
+    echo "Usage: decpass <encrypted_string>"
+    return 1
+  fi
+
+  echo "$1" | grep -v '!vault' | sed 's/^[[:space:]]*//' | ansible-vault decrypt --output -
+  echo
+}
