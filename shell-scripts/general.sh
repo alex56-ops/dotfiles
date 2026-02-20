@@ -45,7 +45,7 @@ funcs() {
             fi
 
             printf "  %-20s %s\n" "$name" "$desc"
-        done < <(grep -E "^[a-zA-Z_-]+\(\)" "$f")
+        done < <(grep -E "^[a-zA-Z0-9_-]+\(\)" "$f")
     done
 
     echo ""

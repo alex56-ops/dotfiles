@@ -1,9 +1,9 @@
 # Search for a package in the local Wazuh database
-wazuh-find() {
+wazuh_find() {
     if [[ "$1" == "-h" ]] || [[ -z "$1" ]]; then
         echo "Search for a package in the local Wazuh database"
-        echo "Usage: wazuh-find <package-name>"
-        echo "Example: wazuh-find wheel"
+        echo "Usage: wazuh_find <package-name>"
+        echo "Example: wazuh_find wheel"
         [[ -z "$1" ]] && return 1 || return 0
     fi
 
