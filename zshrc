@@ -54,3 +54,15 @@ fi
 if [[ "$USER" == "abaer" ]]; then
     source ~/.shell-helpers/shell-helpers.bashrc
 fi
+
+# Magic Key Widget (Magic Space)
+bindkey ' ' magic-space
+
+# chpwd hooks
+autoload -Uz add-zsh-hook
+
+chpwd_ls() { ls }
+chpwd_git() { [[ -d .git ]] && git status -s }
+
+add-zsh-hook chpwd chpwd_ls
+add-zsh-hook chpwd chpwd_git
