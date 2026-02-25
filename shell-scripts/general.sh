@@ -55,27 +55,49 @@ funcs() {
 shortcuts() {
   cat <<'EOF'
 Navigation
-  Control+A    Zeilenanfang
-  Control+E    Zeilenende
-  Alt+B        Wort zurück
-  Alt+F        Wort vor
+  Control+A      Zeilenanfang
+  Control+E      Zeilenende
+  Alt+B          Wort zurück
+  Alt+F          Wort vor
+  Control+XX     Zwischen aktueller und vorheriger Position wechseln
 
-Löschen
-  Control+U    Vor Cursor löschen
-  Control+K    Nach Cursor löschen
-  Control+W    Letztes Wort löschen
-  Control+P    Gelöschtes einfügen (yank)
+Löschen & Einfügen
+  Control+U      Vor Cursor löschen
+  Control+K      Nach Cursor löschen
+  Control+W      Letztes Wort löschen
+  Alt+D          Nächstes Wort löschen
+  Control+P      Gelöschtes einfügen (yank)
+  Control+O      Durch Kill-Ring rotieren (nach yank)
+
+Bearbeiten
+  Control+T      Zwei Zeichen vertauschen
+  Alt+T          Zwei Wörter vertauschen
+  Alt+U          Wort in Großbuchstaben
+  Alt+L          Wort in Kleinbuchstaben
+  Alt+C          Wort kapitalisieren
+  Control+_      Rückgängig (undo)
 
 History
-  Control+R    History durchsuchen
-  !!           Letzter Befehl
-  !$           Letztes Argument
-  !*           Alle Argumente
+  Control+R      History rückwärts durchsuchen
+  Control+S      History vorwärts durchsuchen
+  Control+G      Suche abbrechen
+  !!             Letzter Befehl
+  !$             Letztes Argument
+  !^             Erstes Argument
+  !*             Alle Argumente
+  !:n            n-tes Argument
+  !cmd           Letzter Befehl der mit cmd begann
 
-Sonstiges
-  Control+L    Terminal leeren
-  Control+C    Abbrechen
-  Control+Z    Prozess pausieren (fg zum Fortsetzen)
-  Control+D    Shell beenden
+Prozesse & Terminal
+  Control+L      Terminal leeren
+  Control+C      Abbrechen
+  Control+Z      Prozess pausieren
+  fg             Pausierten Prozess fortsetzen
+  Control+D      Shell beenden / EOF senden
+
+Named Directories
+  ~prod          production-cluster
+  ~staging       staging-cluster
+  ~test          test-cluster
 EOF
 }
