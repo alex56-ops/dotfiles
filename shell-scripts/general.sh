@@ -51,3 +51,31 @@ funcs() {
     echo ""
     echo "Use '<function> -h' for usage details."
 }
+
+shortcuts() {
+  cat <<'EOF'
+Navigation
+  Control+A    Zeilenanfang
+  Control+E    Zeilenende
+  Alt+B        Wort zurück
+  Alt+F        Wort vor
+
+Löschen
+  Control+U    Vor Cursor löschen
+  Control+K    Nach Cursor löschen
+  Control+W    Letztes Wort löschen
+  Control+P    Gelöschtes einfügen (yank)
+
+History
+  Control+R    History durchsuchen
+  !!           Letzter Befehl
+  !$           Letztes Argument
+  !*           Alle Argumente
+
+Sonstiges
+  Control+L    Terminal leeren
+  Control+C    Abbrechen
+  Control+Z    Prozess pausieren (fg zum Fortsetzen)
+  Control+D    Shell beenden
+EOF
+}

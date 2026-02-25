@@ -66,3 +66,5 @@ chpwd_git() { [[ -d .git ]] && git status -s }
 
 add-zsh-hook chpwd chpwd_ls
 add-zsh-hook chpwd chpwd_git
+
+bindkey '^p' yank

@@ -1,6 +1,11 @@
-alias prod='cd ~/repos/kubernetes-config/config/production-cluster/'
-alias staging='cd ~/repos/kubernetes-config/config/staging-cluster/'
-alias test='cd ~/repos/kubernetes-config/config/test-cluster/'
+# Named Directories
+hash -d prod=~/repos/kubernetes-config/config/production-cluster
+hash -d staging=~/repos/kubernetes-config/config/staging-cluster
+hash -d test=~/repos/kubernetes-config/config/test-cluster
+
+alias prod='cd ~prod'
+alias staging='cd ~staging'
+alias test='cd ~test'
 
 # Teleport Login Alias
 alias teleport='tsh login --proxy=teleport.sys.mixxt.net:3080 --auth=passwordless'
