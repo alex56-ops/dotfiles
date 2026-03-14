@@ -52,6 +52,7 @@ funcs() {
     echo "Use '<function> -h' for usage details."
 }
 
+# Keyboard-Shortcuts und Navigation anzeigen
 shortcuts() {
   cat <<'EOF'
 Navigation
