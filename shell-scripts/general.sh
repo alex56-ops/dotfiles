@@ -102,3 +102,20 @@ Named Directories
   ~test          test-cluster
 EOF
 }
+
+# Video/Audio mit yt-dlp herunterladen
+yt() {
+    if [[ "$1" == "-h" ]]; then
+        echo "Video/Audio mit yt-dlp herunterladen"
+        echo "Usage: yt [url]"
+        echo "  Ohne Argument wird die URL aus der Zwischenablage verwendet."
+        echo "Example: yt https://youtube.com/watch?v=abc123"
+        return 0
+    fi
+
+    if [ -n "$1" ]; then
+        yt-dlp "$1"
+    else
+        yt-dlp "$(pbpaste)"
+    fi
+}
