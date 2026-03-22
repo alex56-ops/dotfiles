@@ -137,6 +137,12 @@ app-audit() {
     done < <(brew info --cask "${unresolved_casks[@]}" 2>/dev/null)
   fi
 
+  # Cask-Namen als Set für Namens-Matching (PKG-basierte Casks)
+  local -A cask_set=()
+  for cask in "${cask_list[@]}"; do
+    cask_set[$cask]=1
+  done
+
   # ══════════════════════════════════════════════════════════
   # 3) Homebrew Formulae
   # ══════════════════════════════════════════════════════════
@@ -177,9 +183,19 @@ app-audit() {
     local display_name="${app_name%.app}"
     ((total_gui++))
 
+    # Namens-Matching für PKG-basierte Casks (z.B. nordvpn, veracrypt)
+    local normalized="${display_name:l}"
+    normalized="${normalized// /-}"
+    local matched_cask=""
     if [[ -n "${brew_cask_map[$app_name]+x}" ]]; then
+      matched_cask="${brew_cask_map[$app_name]}"
+    elif [[ -n "${cask_set[$normalized]+x}" ]]; then
+      matched_cask="$normalized"
+    fi
+
+    if [[ -n "$matched_cask" ]]; then
       output_gui+=$(printf "%-40s ${GREEN}%-15s${NC} %-30s\n" \
-        "$display_name" "✅ Homebrew" "cask: ${brew_cask_map[$app_name]}")
+        "$display_name" "✅ Homebrew" "cask: $matched_cask")
       output_gui+=$'\n'
       ((brew_gui++))
     elif [[ -n "${macos_default[$app_name]+x}" ]]; then
@@ -275,8 +291,16 @@ app-audit() {
       [[ -e "$app_path" ]] || continue
       local app_name=$(basename "$app_path")
       local display_name="${app_name%.app}"
+      local normalized="${display_name:l}"
+      normalized="${normalized// /-}"
+      local matched_cask=""
       if [[ -n "${brew_cask_map[$app_name]+x}" ]]; then
-        echo "$display_name,GUI,Homebrew,cask:${brew_cask_map[$app_name]}" >> "$csv_file"
+        matched_cask="${brew_cask_map[$app_name]}"
+      elif [[ -n "${cask_set[$normalized]+x}" ]]; then
+        matched_cask="$normalized"
+      fi
+      if [[ -n "$matched_cask" ]]; then
+        echo "$display_name,GUI,Homebrew,cask:$matched_cask" >> "$csv_file"
       elif [[ -n "${macos_default[$app_name]+x}" ]]; then
         echo "$display_name,GUI,macOS,vorinstalliert" >> "$csv_file"
       else
