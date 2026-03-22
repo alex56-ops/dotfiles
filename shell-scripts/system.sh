@@ -104,27 +104,38 @@ app-audit() {
   done < <(brew list --cask 2>/dev/null)
 
   # Cask-Artifakte aus dem Caskroom lesen (schneller als brew info)
-  local caskroom="/opt/homebrew/Caskroom"
-  [[ ! -d "$caskroom" ]] && caskroom="/usr/local/Caskroom"
+  local caskroom="$(brew --prefix)/Caskroom"
 
+  local -a unresolved_casks=()
   for cask in "${cask_list[@]}"; do
-    # Suche .app-Bundles die zu diesem Cask gehören
-    local version_dir
     local -a vdirs=("$caskroom/$cask"/*(N/))
-    version_dir="${vdirs[1]:-}"
-    if [[ -n "$version_dir" ]]; then
-      # Manche Casks haben eine .app direkt im Versionverzeichnis
-      for app in "$version_dir"*.app(N) ; do
-        brew_cask_map["$(basename "$app")"]="$cask"
+    local vdir="${vdirs[1]:-}"
+    local cask_found=0
+    if [[ -n "$vdir" ]]; then
+      for app in "$vdir"/*.app(N) ; do
+        brew_cask_map[$(basename "$app")]="$cask"
+        cask_found=1
       done
     fi
-    # Fallback: prüfe ob ein bekannter App-Name existiert
-    if [[ ${#brew_cask_map[@]} -eq 0 || -z "${brew_cask_map[*]}" ]]; then
-      local info_app
-      info_app=$(brew info --cask "$cask" 2>/dev/null | grep -oE '[A-Za-z0-9 _-]+\.app' | head -1)
-      [[ -n "$info_app" ]] && brew_cask_map["$info_app"]="$cask"
-    fi
+    (( cask_found )) || unresolved_casks+=("$cask")
   done
+
+  # Fallback: unaufgelöste Casks via brew info abfragen (ein Aufruf für alle)
+  if (( ${#unresolved_casks[@]} > 0 )); then
+    local current_cask=""
+    while IFS= read -r line; do
+      if [[ "$line" == "==> "* && "$line" == *": "* ]]; then
+        local rest="${line#==> }"
+        local maybe_cask="${rest%%:*}"
+        [[ "$maybe_cask" != *" "* ]] && current_cask="$maybe_cask"
+      elif [[ -n "$current_cask" && "$line" == *".app (App)"* ]]; then
+        local app_name="${line%.app*}.app"
+        app_name="${app_name#"${app_name%%[![:space:]]*}"}"
+        brew_cask_map[$app_name]="$current_cask"
+        current_cask=""
+      fi
+    done < <(brew info --cask "${unresolved_casks[@]}" 2>/dev/null)
+  fi
 
   # ══════════════════════════════════════════════════════════
   # 3) Homebrew Formulae
