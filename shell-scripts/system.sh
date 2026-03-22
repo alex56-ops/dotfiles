@@ -110,7 +110,8 @@ app-audit() {
   for cask in "${cask_list[@]}"; do
     # Suche .app-Bundles die zu diesem Cask gehören
     local version_dir
-    version_dir=$(ls -1d "$caskroom/$cask"/*/ 2>/dev/null | head -1)
+    local -a vdirs=("$caskroom/$cask"/*(N/))
+    version_dir="${vdirs[1]:-}"
     if [[ -n "$version_dir" ]]; then
       # Manche Casks haben eine .app direkt im Versionverzeichnis
       for app in "$version_dir"*.app(N) ; do
@@ -159,7 +160,7 @@ app-audit() {
   printf '%.0s─' {1..85}; echo
 
   local output_gui=""
-  for app_path in /Applications/*.app /Applications/Utilities/*.app; do
+  for app_path in /Applications/*.app(N) /Applications/Utilities/*.app(N); do
     [[ -e "$app_path" ]] || continue
     local app_name=$(basename "$app_path")
     local display_name="${app_name%.app}"
@@ -259,7 +260,7 @@ app-audit() {
   if [[ "$1" == "--csv" ]]; then
     local csv_file="$HOME/app-audit-$(date +%Y%m%d).csv"
     echo "Name,Typ,Status,Details" > "$csv_file"
-    for app_path in /Applications/*.app /Applications/Utilities/*.app; do
+    for app_path in /Applications/*.app(N) /Applications/Utilities/*.app(N); do
       [[ -e "$app_path" ]] || continue
       local app_name=$(basename "$app_path")
       local display_name="${app_name%.app}"
