@@ -1,13 +1,23 @@
 # macOS Apps und CLI-Tools auditieren (Homebrew vs. manuell vs. System)
 app-audit() {
-  if [[ "$1" == "-h" ]]; then
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
       echo "macOS Apps und CLI-Tools auditieren (Homebrew vs. manuell vs. System)"
-      echo "Usage: app-audit [--csv]"
-      echo "  --csv  Exportiert Ergebnisse als CSV-Datei"
+      echo "Usage: app-audit [--csv] [-c|--check-casks]"
+      echo "  --csv              Exportiert Ergebnisse als CSV-Datei"
+      echo "  -c, --check-casks  Prüft ob Homebrew-Casks für manuell installierte Apps existieren"
       echo "Example: app-audit"
-      echo "         app-audit --csv"
+      echo "         app-audit --check-casks"
+      echo "         app-audit --csv --check-casks"
       return 0
   fi
+
+  local flag_csv=0 flag_check_casks=0
+  for arg in "$@"; do
+    case "$arg" in
+      --csv) flag_csv=1 ;;
+      -c|--check-casks) flag_check_casks=1 ;;
+    esac
+  done
 
   if ! command -v brew &>/dev/null; then
       echo "Fehler: Homebrew ist nicht installiert"
@@ -176,6 +186,7 @@ app-audit() {
   printf "${CYAN}%-40s %-15s %-30s${NC}\n" "APP" "STATUS" "DETAILS"
   printf '%.0s─' {1..85}; echo
 
+  local -a manual_apps=()
   local output_gui=""
   for app_path in /Applications/*.app(N) /Applications/Utilities/*.app(N); do
     [[ -e "$app_path" ]] || continue
@@ -207,6 +218,7 @@ app-audit() {
       output_gui+=$(printf "%-40s ${YELLOW}%-15s${NC} %-30s\n" \
         "$display_name" "⚠️  Manuell" "nicht via Brew verwaltet")
       output_gui+=$'\n'
+      manual_apps+=("$display_name")
       ((manual_gui++))
     fi
   done
@@ -270,8 +282,37 @@ app-audit() {
     echo ""
   fi
 
+  if ((flag_check_casks)) && ((${#manual_apps[@]} > 0)); then
+    printf "\n${MAGENTA}═══ CASK-VERFÜGBARKEIT (manuell installierte Apps) ═══${NC}\n\n"
+    local found_any=0
+    local -a found_casks=()
+    for app in "${manual_apps[@]}"; do
+      local search_term="${app:l}"
+      search_term="${search_term// /-}"
+      local cask_match=""
+      cask_match=$(brew search --cask "/^${search_term}$/" 2>/dev/null | head -1)
+      if [[ -n "$cask_match" ]]; then
+        printf "${GREEN}✅ %-30s${NC} → brew install --cask --adopt %s\n" "$app" "$cask_match"
+        found_casks+=("$cask_match")
+        found_any=1
+      fi
+    done
+    if ((found_any)); then
+      echo ""
+      echo "💡 Alle auf einmal migrieren:"
+      local adopt_cmd="brew install --cask --adopt"
+      for cask in "${found_casks[@]}"; do
+        adopt_cmd+=" $cask"
+      done
+      echo "   $adopt_cmd"
+    else
+      echo "Keine passenden Casks gefunden."
+    fi
+    echo ""
+  fi
+
   # Optional: Exportierbare Liste
-  if [[ "$1" == "--csv" ]]; then
+  if ((flag_csv)); then
     local csv_file="$HOME/app-audit-$(date +%Y%m%d).csv"
     echo "Name,Typ,Status,Details" > "$csv_file"
     for app_path in /Applications/*.app(N) /Applications/Utilities/*.app(N); do
