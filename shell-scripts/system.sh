@@ -148,7 +148,7 @@ app-audit() {
   # ══════════════════════════════════════════════════════════
   local -A brew_formulae=()
   while IFS= read -r formula; do
-    [[ -n "$formula" ]] && brew_formulae["$formula"]=1
+    [[ -n "$formula" ]] && brew_formulae[$formula]=1
   done < <(brew list --formula 2>/dev/null)
 
   # ══════════════════════════════════════════════════════════
@@ -219,7 +219,7 @@ app-audit() {
   # ══════════════════════════════════════════════════════════
   # 6) Ausgabe: CLI-Tools (Homebrew Formulae)
   # ══════════════════════════════════════════════════════════
-  local total_cli=0 brew_cli=0 system_cli_count=0 both_count=0
+  local total_cli=0 brew_cli=0 system_cli_count=0
 
   printf "\n${MAGENTA}═══ CLI-TOOLS (Homebrew Formulae + System) ═══${NC}\n\n"
   printf "${CYAN}%-30s %-15s %-40s${NC}\n" "TOOL" "STATUS" "DETAILS"
@@ -230,20 +230,10 @@ app-audit() {
   # Alle Homebrew-Formulae auflisten
   for formula in "${(@k)brew_formulae}"; do
     ((total_cli++))
-    local brew_path=""
-    brew_path=$(brew --prefix 2>/dev/null)/bin/$formula
-
-    if [[ -n "${system_cli[$formula]+x}" ]]; then
-      output_cli+=$(printf "%-30s ${GREEN}%-15s${NC} %-40s\n" \
-        "$formula" "🔀 Beide" "brew + system (brew hat Vorrang)")
-      output_cli+=$'\n'
-      ((both_count++))
-    else
-      output_cli+=$(printf "%-30s ${GREEN}%-15s${NC} %-40s\n" \
-        "$formula" "✅ Homebrew" "formula")
-      output_cli+=$'\n'
-      ((brew_cli++))
-    fi
+    output_cli+=$(printf "%-30s ${GREEN}%-15s${NC} %-40s\n" \
+      "$formula" "✅ Homebrew" "formula")
+    output_cli+=$'\n'
+    ((brew_cli++))
   done
 
   # System-CLI-Tools die NICHT in Homebrew sind
@@ -260,8 +250,8 @@ app-audit() {
   echo "$output_cli" | sort
 
   printf '%.0s─' {1..85}; echo
-  printf "CLI gesamt: %d | ${GREEN}Homebrew: %d${NC} | ${GREEN}Beide: %d${NC} | ${BLUE}System: %d${NC}\n" \
-    "$total_cli" "$brew_cli" "$both_count" "$system_cli_count"
+  printf "CLI gesamt: %d | ${GREEN}Homebrew: %d${NC} | ${BLUE}System: %d${NC}\n" \
+    "$total_cli" "$brew_cli" "$system_cli_count"
 
   # ══════════════════════════════════════════════════════════
   # 7) Zusammenfassung + Tipps
@@ -269,17 +259,14 @@ app-audit() {
   printf "\n${MAGENTA}═══ ZUSAMMENFASSUNG ═══${NC}\n\n"
   printf "GUI-Apps:  %d total (%d Homebrew, %d macOS, %d manuell)\n" \
     "$total_gui" "$brew_gui" "$macos_gui" "$manual_gui"
-  printf "CLI-Tools: %d total (%d Homebrew, %d beide, %d nur System)\n\n" \
-    "$total_cli" "$brew_cli" "$both_count" "$system_cli_count"
+  printf "CLI-Tools: %d total (%d Homebrew, %d System)\n\n" \
+    "$total_cli" "$brew_cli" "$system_cli_count"
 
   if ((manual_gui > 0)); then
     echo "💡 Manuell installierte GUI-Apps zu Homebrew migrieren:"
-    echo "   1. App deinstallieren"
-    echo "   2. brew search <name>       (Cask-Namen finden)"
-    echo "   3. brew install --cask <name>"
+    echo "   brew install --cask --adopt <name>"
     echo ""
-    echo "   Oder direkt prüfen ob ein Cask existiert:"
-    echo "   brew info --cask <name>"
+    echo "   Cask-Namen suchen: brew search <name>"
     echo ""
   fi
 
