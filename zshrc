@@ -43,6 +43,13 @@ if [ -d "$HOME/.shell-scripts" ]; then
     done
 fi
 
+# Shell wrappers (auto-start services etc.)
+if [ -d "$HOME/.shell-wrappers" ]; then
+    for wrapper in "$HOME/.shell-wrappers"/*.sh; do
+        [ -r "$wrapper" ] && source "$wrapper"
+    done
+fi
+
 # Personal Homebrew
 export PATH="$HOME/.homebrew/bin:$PATH"
 
