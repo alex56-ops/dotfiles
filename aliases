@@ -29,5 +29,8 @@ alias pc='podman-compose'
 alias -s {zip,ZIP}=unzip -l
 alias -s {tar.gz,tgz}=tar -tzf
 
+# Markdown
+alias -s md='glow'
+
 # Format JSON
 alias -s json='jq .'
