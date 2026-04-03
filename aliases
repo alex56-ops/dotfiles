@@ -17,6 +17,9 @@ alias k8s-setup='ansible-playbook -i setup.ini k8s-node-setup.yml'
 # Wazuh Control
 alias wazuh='sudo /Library/Ossec/bin/wazuh-control'
 
+# Colima
+alias colima-log='log show --predicate '\''eventMessage contains "colima-idle-check"'\'' --last 30m'
+
 # Podman Aliases
 alias pc='podman-compose'
 
