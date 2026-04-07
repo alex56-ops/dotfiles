@@ -8,13 +8,11 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>exec "$HOME/.launchd-scripts/wireguard-session-watcher"</string>
+        <string>exec "$HOME/.launchd-scripts/wireguard-session-watcher" 2>/tmp/wireguard-session-watcher-$(id -un).err</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
-    <key>StandardErrorPath</key>
-    <string>/tmp/wireguard-session-watcher.err</string>
 </dict>
 </plist>
