@@ -3,18 +3,18 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.dotfiles.colima-idle-check</string>
+    <string>com.dotfiles.wireguard-session-watcher</string>
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>exec /bin/bash "$HOME/.launchd-scripts/colima-idle-check.sh"</string>
+        <string>exec "$HOME/.launchd-scripts/wireguard-session-watcher"</string>
     </array>
-    <key>StartInterval</key>
-    <integer>300</integer>
     <key>RunAtLoad</key>
-    <false/>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
     <key>StandardErrorPath</key>
-    <string>/tmp/colima-idle-check.err</string>
+    <string>/tmp/wireguard-session-watcher.err</string>
 </dict>
 </plist>

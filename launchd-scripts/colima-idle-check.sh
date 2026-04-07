@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-COLIMA="/Users/alexprivat/.homebrew/bin/colima"
+COLIMA="$HOME/.homebrew/bin/colima"
 DOCKER="/opt/homebrew/bin/docker"
 ACTIVITY_FILE="$HOME/.local/state/colima/last-activity"
 COLIMA_IDLE_TIMEOUT="${COLIMA_IDLE_TIMEOUT:-900}" # 15 min
