@@ -63,6 +63,25 @@ encpass() {
   ansible-vault encrypt_string "$password" --name "$name"
 }
 
+# Deploy local_overrides.yml to server03
+deploy-overrides() {
+    if [[ "$1" == "-h" ]]; then
+        echo "Deploy local_overrides.yml to server03"
+        echo "Usage: deploy-overrides"
+        return 0
+    fi
+
+    local local_file="$HOME/repos/ansible-autoserver/vars/local_overrides.yml"
+    local remote_path="/mnt/ansible/repo/vars/local_overrides.yml"
+
+    if [[ ! -f "$local_file" ]]; then
+        echo "Fehler: $local_file nicht gefunden"
+        return 1
+    fi
+
+    scp "$local_file" "server03:$remote_path"
+}
+
 # Decrypt an Ansible Vault encrypted string
 decpass() {
   if [[ "$1" == "-h" ]]; then
