@@ -1,3 +1,15 @@
+# Restore and start Samba on UDM Pro
+fix-samba() {
+    if [[ "$1" == "-h" ]]; then
+        echo "Restore and start Samba on UDM Pro"
+        echo "Usage: fix-samba"
+        return 0
+    fi
+
+    echo "Connecting to UDM Pro (192.168.1.1)..."
+    ssh -t root@192.168.1.1 '/data/on_boot.d/10-samba-setup.sh && cat /var/log/samba-boot.log | tail -5'
+}
+
 # macOS Apps und CLI-Tools auditieren (Homebrew vs. manuell vs. System)
 app-audit() {
   if [[ "$1" == "-h" || "$1" == "--help" ]]; then
