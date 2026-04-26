@@ -2,26 +2,40 @@
 update() {
     if [[ "$1" == "-h" ]] || [[ -z "$1" ]]; then
         echo "Update services on server03 via Ansible"
-        echo "Usage: update [--base|-b] <service1> [service2] ..."
+        echo "Usage: update [--base|-b] [--all|-a] <service1> [service2] ..."
+        echo "  --all,  -a  Update all services"
         echo "  --base, -b  Include baseline and docker tags"
         echo "Example: update authelia immich"
         echo "         update -b authelia"
+        echo "         update -a"
         [[ -z "$1" ]] && return 1 || return 0
     fi
 
     local skip_tags="--skip-tags baseline,docker"
+    local all=0
 
-    if [ "$1" = "--base" ] || [ "$1" = "-b" ]; then
-        skip_tags=""
-        shift
+    while [[ "$1" == -* ]]; do
+        case "$1" in
+            --base|-b) skip_tags=""; shift ;;
+            --all|-a)  all=1; shift ;;
+            *) echo "Unknown option: $1"; return 1 ;;
+        esac
+    done
+
+    if [[ $all -eq 0 && $# -eq 0 ]]; then
+        echo "Error: Service name(s) required (or use -a for all)"
+        return 1
     fi
 
-    local services="['$(echo "$@" | sed "s/ /','/g")']"
+    local deploy_arg=""
+    if [[ $all -eq 0 ]]; then
+        deploy_arg="-e \"deploy_only=['$(echo "$@" | sed "s/ /','/g")']\""
+    fi
 
     ssh -t server03 \
         "cd /mnt/ansible/repo &&
          git pull &&
-         ansible-playbook playbooks/services/main-updating.yml -e \"deploy_only=$services\" $skip_tags"
+         ansible-playbook playbooks/services/main-updating.yml $deploy_arg $skip_tags"
 }
 
 # Generate password and encrypt with Ansible Vault
