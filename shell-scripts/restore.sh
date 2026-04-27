@@ -44,7 +44,8 @@ restore() {
     echo "  - Datenbanken droppen und neu importieren"
     echo "  - Datenverzeichnisse ersetzen"
     echo ""
-    read -r -p "Fortfahren? (yes/no): " confirm
+    echo -n "Fortfahren? (yes/no): "
+    read -r confirm
     if [[ "$confirm" != "yes" ]]; then
         echo "Abgebrochen."
         return 1

@@ -23,6 +23,9 @@ alias colima-log='log show --predicate '\''eventMessage contains "colima-idle-ch
 # Podman Aliases
 alias pc='podman-compose'
 
+# Server03 Aliases
+alias reset-update='ssh server03 "systemctl reset-failed ansible-auto-update.service"'
+
  #  Suffix Aliases
 
 # Archive
