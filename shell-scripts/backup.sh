@@ -14,7 +14,7 @@ backup() {
     fi
 
     # List mode
-    if [[ "$1" == "--list" ]]; then
+    if [[ "$1" == "--list" ]] || [[ "$1" == "-l" ]]; then
         echo "Fetching backup-staging services from server03..."
         ssh server03 "systemctl list-unit-files 'backup-staging-*.service' --no-legend | awk '{print \$1}' | sed 's/backup-staging-//;s/\.service//'"
         return $?
