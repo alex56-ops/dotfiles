@@ -113,7 +113,7 @@ _restore_local() {
         # Stop running containers if compose file exists
         if [[ -f "${restore_dir}/docker-compose.yml" ]]; then
             echo ">>> Stoppe laufende Container..."
-            docker compose -f "${restore_dir}/docker-compose.yml" down -v 2>/dev/null || true
+            docker-compose -f "${restore_dir}/docker-compose.yml" down -v 2>/dev/null || true
         fi
         rm -rf "$restore_dir"
     fi
@@ -149,22 +149,19 @@ _restore_local() {
     if [[ -f "${restore_dir}/docker-compose.yml" ]]; then
         echo ">>> Passe docker-compose.yml fuer lokalen Betrieb an..."
         python3 -c "
-import sys
+import sys, re
 
-def strip_blocks(lines):
+def adapt_compose(lines):
     result = []
     skip = False
     skip_indent = 0
-    top_level_networks_line = None
+    port_added = False
 
-    for i, line in enumerate(lines):
+    for line in lines:
         stripped = line.rstrip('\n')
-
-        # Detect indentation level
         content = stripped.lstrip()
         indent = len(stripped) - len(content)
 
-        # If we're skipping a block, check if we're still inside it
         if skip:
             if content == '' or indent > skip_indent:
                 continue
@@ -176,20 +173,51 @@ def strip_blocks(lines):
             skip_indent = indent
             continue
 
-        # Skip per-service 'networks:' and 'extra_hosts:' blocks
-        if indent > 0 and content in ('networks:', 'extra_hosts:'):
+        # Skip per-service 'networks:', 'extra_hosts:', 'depends_on:' blocks
+        if indent > 0 and content in ('networks:', 'extra_hosts:', 'depends_on:'):
             skip = True
             skip_indent = indent
             continue
 
+        # Detect healthcheck port and add port mapping before it
+        if not port_added and content.startswith('healthcheck:'):
+            # Search backwards for port in previous lines (healthcheck test)
+            # or search forward — we'll scan all lines separately
+            pass
+
         result.append(line)
+
+    # Find app port from healthcheck URL in result
+    app_port = None
+    for line in result:
+        m = re.search(r'localhost:(\d+)', line)
+        if m:
+            port = m.group(1)
+            # Skip postgres default port
+            if port != '5432':
+                app_port = port
+                break
+
+    # Add port mapping to first service with detected port
+    if app_port:
+        final = []
+        added = False
+        for line in result:
+            final.append(line)
+            if not added and line.strip().startswith('restart:'):
+                # Find indentation of restart line
+                spc = len(line) - len(line.lstrip())
+                final.append(' ' * spc + 'ports:\n')
+                final.append(' ' * spc + '  - \"8080:' + app_port + '\"\n')
+                added = True
+        result = final
 
     return result
 
 with open(sys.argv[1], 'r') as f:
     lines = f.readlines()
 
-result = strip_blocks(lines)
+result = adapt_compose(lines)
 
 with open(sys.argv[1], 'w') as f:
     f.writelines(result)
@@ -199,9 +227,9 @@ with open(sys.argv[1], 'w') as f:
     # Step 5: Start containers
     echo ""
     echo ">>> Starte Container..."
-    docker compose -f "${restore_dir}/docker-compose.yml" up -d
+    docker-compose -f "${restore_dir}/docker-compose.yml" up -d
     if [[ $? -ne 0 ]]; then
-        echo "FEHLER: docker compose up fehlgeschlagen"
+        echo "FEHLER: docker-compose up fehlgeschlagen"
         return 1
     fi
 
@@ -249,7 +277,7 @@ with open(sys.argv[1], 'w') as f:
     if $has_dumps; then
         echo ""
         echo ">>> Restart Container (DB-Aenderungen uebernehmen)..."
-        docker compose -f "${restore_dir}/docker-compose.yml" restart
+        docker-compose -f "${restore_dir}/docker-compose.yml" restart
     fi
 
     # Step 8: Show status
@@ -258,7 +286,12 @@ with open(sys.argv[1], 'w') as f:
     echo "  Lokaler Restore von '${service}' abgeschlossen"
     echo "========================================"
     echo ""
-    docker compose -f "${restore_dir}/docker-compose.yml" ps
+    docker-compose -f "${restore_dir}/docker-compose.yml" ps
     echo ""
-    echo "Stoppen mit: cd ~/.restore/${service} && docker compose down -v"
+    # Show URL if port mapping was added
+    if grep -q '8080:' "${restore_dir}/docker-compose.yml" 2>/dev/null; then
+        echo "Anwendung: http://localhost:8080"
+        echo ""
+    fi
+    echo "Stoppen mit: cd ~/.restore/${service} && docker-compose down -v"
 }
