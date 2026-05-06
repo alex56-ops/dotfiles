@@ -3,17 +3,18 @@ restore() {
     if [[ "${1:-}" == "-h" ]] || [[ -z "${1:-}" ]]; then
         echo "Restore a service on server03 from NAS backup"
         echo "Usage: restore <service> [archive]"
-        echo "       restore list | -l | --list"
+        echo "       restore list [service]"
         echo "       restore -local <service> [archive]"
         echo ""
-        echo "  list, -l, --list   List available archives on NAS"
+        echo "  list               List available services on NAS"
+        echo "  list <service>     List archives for a service"
         echo "  -local <service>   Restore locally as Docker container"
         echo "  <service>          Service to restore (e.g. briefkasten)"
         echo "  [archive]          Specific archive name (default: latest)"
         echo ""
         echo "Example: restore briefkasten"
-        echo "         restore briefkasten server03-2025-01-15T02:00:00"
         echo "         restore list"
+        echo "         restore list briefkasten"
         echo "         restore -local briefkasten"
         [[ -z "${1:-}" ]] && return 1 || return 0
     fi
@@ -22,8 +23,14 @@ restore() {
 
     # List mode
     if [[ "$1" == "--list" ]] || [[ "$1" == "list" ]] || [[ "$1" == "-l" ]]; then
-        echo "Fetching archives from NAS..."
-        ssh nas "sudo -u recovery ${NAS_SCRIPT} --list server03"
+        local filter="${2:-}"
+        if [[ -n "$filter" ]]; then
+            echo "Fetching archives for '${filter}'..."
+            ssh nas "sudo -u recovery ${NAS_SCRIPT} --list server03 ${filter}"
+        else
+            echo "Fetching services from NAS..."
+            ssh nas "sudo -u recovery ${NAS_SCRIPT} --list server03"
+        fi
         return $?
     fi
 
@@ -36,8 +43,8 @@ restore() {
     local service="$1"
     local archive="${2:-}"
 
-    # Show available services in latest archive if no archive specified
-    echo "Checking latest archive on NAS..."
+    # Show available services on NAS
+    echo "Checking available services on NAS..."
     local info
     info=$(ssh nas "sudo -u recovery ${NAS_SCRIPT} server03" 2>&1)
     echo "$info"
