@@ -17,7 +17,7 @@ update() {
     while [[ "$1" == -* ]]; do
         case "$1" in
             --base|-b) skip_tags=""; shift ;;
-            --all|-a)  all=1; shift ;;
+            --all|-a)  all=1; skip_tags=""; shift ;;
             *) echo "Unknown option: $1"; return 1 ;;
         esac
     done
