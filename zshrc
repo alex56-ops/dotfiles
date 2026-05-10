@@ -75,3 +75,5 @@ add-zsh-hook chpwd chpwd_ls
 add-zsh-hook chpwd chpwd_git
 
 bindkey '^p' yank
+[ -f ~/repos/talos-k8s/talos/clusterconfig/talosconfig ] && export TALOSCONFIG=~/repos/talos-k8s/talos/clusterconfig/talosconfig
+[ -f ~/.config/sops/age/keys.txt ] && export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
