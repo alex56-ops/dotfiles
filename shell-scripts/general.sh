@@ -103,6 +103,39 @@ Named Directories
 EOF
 }
 
+# Alle docx-Dateien im aktuellen Verzeichnis mit pandoc zu Markdown konvertieren
+mergedocs() {
+    if [[ "${1:-}" == "-h" ]]; then
+        echo "Alle docx-Dateien im aktuellen Verzeichnis mit pandoc zu einer Markdown-Datei zusammenfuehren"
+        echo "Usage: mergedocs [output]"
+        echo "  output    Ausgabedatei (Standard: merged.md)"
+        echo "Example: mergedocs ergebnis.md"
+        return 0
+    fi
+
+    local output="${1:-merged.md}"
+    local files=(*.docx)
+
+    if [[ ${#files[@]} -eq 0 ]]; then
+        echo "Fehler: Keine .docx-Dateien im aktuellen Verzeichnis gefunden"
+        return 1
+    fi
+
+    if ! command -v pandoc &>/dev/null; then
+        echo "Fehler: pandoc ist nicht installiert"
+        return 1
+    fi
+
+    echo ">>> Konvertiere ${#files[@]} Dateien..."
+    pandoc -f docx -t markdown_strict "${files[@]}" -o "$output" --extract-media=./media
+    if [[ $? -ne 0 ]]; then
+        echo "FEHLER: Konvertierung fehlgeschlagen"
+        return 1
+    fi
+
+    echo "Fertig: $(wc -l < "$output") Zeilen in $output (${#files[@]} Dateien)"
+}
+
 # Video/Audio mit yt-dlp herunterladen
 yt() {
     if [[ "$1" == "-h" ]]; then
