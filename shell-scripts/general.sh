@@ -107,13 +107,24 @@ EOF
 mergedocs() {
     if [[ "${1:-}" == "-h" ]]; then
         echo "Alle docx-Dateien im aktuellen Verzeichnis mit pandoc zu einer Markdown-Datei zusammenfuehren"
-        echo "Usage: mergedocs [output]"
-        echo "  output    Ausgabedatei (Standard: merged.md)"
-        echo "Example: mergedocs ergebnis.md"
+        echo "Usage: mergedocs [-d|--date] [output]"
+        echo "  -d|--date  Datum an Dateinamen anhaengen (z.B. merged_2025-01-15.md)"
+        echo "  output     Ausgabedatei (Standard: merged.md)"
+        echo "Example: mergedocs -d ergebnis.md"
         return 0
     fi
 
+    local add_date=0
+    if [[ "${1:-}" == "-d" ]] || [[ "${1:-}" == "--date" ]]; then
+        add_date=1
+        shift
+    fi
+
     local output="${1:-merged.md}"
+    if [[ $add_date -eq 1 ]]; then
+        output="${output%.md}_$(date +%Y-%m-%d).md"
+    fi
+
     local files=(*.docx)
 
     if [[ ${#files[@]} -eq 0 ]]; then
