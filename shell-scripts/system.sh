@@ -40,14 +40,6 @@ if [ -f /data/samba/passdb.tdb ]; then
     echo "passdb.tdb restored"
 fi
 
-# Share-Verzeichnis sicherstellen
-if [ ! -d /volume1/shared ]; then
-    mkdir -p /volume1/shared
-    echo "/volume1/shared created"
-fi
-chown -R smbuser:smbuser /volume1/shared 2>/dev/null || true
-chmod -R 755 /volume1/shared
-
 # Samba starten
 systemctl enable smbd nmbd 2>/dev/null
 systemctl restart smbd nmbd
