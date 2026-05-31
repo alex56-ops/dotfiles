@@ -1,13 +1,65 @@
-# Restore and start Samba on UDM Pro
-fix-samba() {
+# UDM Pro nach Firmware-Update wiederherstellen (SSH-Keys + Samba)
+fix-udm() {
     if [[ "$1" == "-h" ]]; then
-        echo "Restore and start Samba on UDM Pro"
-        echo "Usage: fix-samba"
+        echo "UDM Pro nach Firmware-Update wiederherstellen (SSH-Keys + Samba)"
+        echo "Usage: fix-udm"
         return 0
     fi
 
+    local UDM="root@192.168.1.1"
+    local PUBKEY="$HOME/.ssh/id_ed25519.pub"
+
+    if [ ! -f "$PUBKEY" ]; then
+        echo "Fehler: $PUBKEY nicht gefunden"
+        return 1
+    fi
+
+    local KEY
+    KEY="$(cat "$PUBKEY")"
+
     echo "Connecting to UDM Pro (192.168.1.1)..."
-    ssh -t root@192.168.1.1 '/data/on_boot.d/10-samba-setup.sh && cat /var/log/samba-boot.log | tail -5'
+    ssh -o ConnectTimeout=5 "$UDM" "PUBKEY='$KEY' bash -s" <<'REMOTE'
+set -e
+
+# --- SSH-Key ---
+mkdir -p ~/.ssh
+echo "$PUBKEY" > ~/.ssh/authorized_keys
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+echo "SSH authorized_keys restored"
+
+# --- Samba Config ---
+if [ -f /data/samba/smb.conf ]; then
+    cp /data/samba/smb.conf /etc/samba/smb.conf
+    echo "smb.conf restored"
+fi
+
+if [ -f /data/samba/passdb.tdb ]; then
+    mkdir -p /var/lib/samba/private
+    cp /data/samba/passdb.tdb /var/lib/samba/private/passdb.tdb
+    echo "passdb.tdb restored"
+fi
+
+# Share-Verzeichnis sicherstellen
+if [ ! -d /volume1/shared ]; then
+    mkdir -p /volume1/shared
+    echo "/volume1/shared created"
+fi
+chown -R smbuser:smbuser /volume1/shared 2>/dev/null || true
+chmod -R 755 /volume1/shared
+
+# Samba starten
+systemctl enable smbd nmbd 2>/dev/null
+systemctl restart smbd nmbd
+echo "Samba services restarted"
+
+# --- Status ---
+systemctl is-active smbd nmbd
+REMOTE
+
+    # --- Samba-Mount auf server03 remounten ---
+    echo "Remounting Samba on server03..."
+    ssh -o ConnectTimeout=5 server03 'sudo umount -l /mnt/udm-shared 2>/dev/null; sleep 1; sudo mount /mnt/udm-shared && echo "Samba remounted on server03" || echo "Remount failed"'
 }
 
 # macOS Apps und CLI-Tools auditieren (Homebrew vs. manuell vs. System)
