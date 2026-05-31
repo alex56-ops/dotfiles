@@ -59,7 +59,7 @@ REMOTE
 
     # --- Samba-Mount auf server03 remounten ---
     echo "Remounting Samba on server03..."
-    ssh -o ConnectTimeout=5 server03 'sudo umount -l /mnt/udm-shared 2>/dev/null; sleep 1; sudo mount /mnt/udm-shared && echo "Samba remounted on server03" || echo "Remount failed"'
+    ssh -o ConnectTimeout=5 server03 'sudo umount -f /mnt/udm-shared 2>/dev/null; sleep 1; sudo mount /mnt/udm-shared && echo "Samba remounted on server03" || echo "Remount failed"'
 }
 
 # macOS Apps und CLI-Tools auditieren (Homebrew vs. manuell vs. System)
