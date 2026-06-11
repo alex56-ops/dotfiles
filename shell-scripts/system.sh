@@ -397,3 +397,30 @@ app-audit() {
     echo "📄 CSV exportiert: $csv_file"
   fi
 }
+
+# macOS Quarantäne-Flag von Apps entfernen (Gatekeeper umgehen)
+unblock() {
+    if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+        echo "macOS Quarantäne-Flag von Apps entfernen (Gatekeeper umgehen)"
+        echo "Usage: unblock <App-Name oder Pfad>"
+        echo "  App-Name    Sucht in /Applications/<Name>.app"
+        echo "  Pfad        Direkter Pfad zur .app"
+        echo "Example: unblock \"Ente Auth\""
+        echo "         unblock ~/Downloads/SomeApp.app"
+        return 0
+    fi
+
+    if [[ -z "$1" ]]; then
+        echo "Fehler: App-Name oder Pfad fehlt (siehe unblock -h)"
+        return 1
+    fi
+
+    if xattr -d com.apple.quarantine "/Applications/$1.app" 2>/dev/null; then
+        echo "Quarantäne entfernt: /Applications/$1.app"
+    elif xattr -d com.apple.quarantine "$1" 2>/dev/null; then
+        echo "Quarantäne entfernt: $1"
+    else
+        echo "App nicht gefunden: $1"
+        return 1
+    fi
+}
