@@ -103,13 +103,15 @@ Named Directories
 EOF
 }
 
-# Alle docx-Dateien im aktuellen Verzeichnis mit pandoc zu Markdown konvertieren
+# Alle docx- und xlsx-Dateien im aktuellen Verzeichnis mit pandoc zu Markdown zusammenfuehren
+# (xlsx wird ueber LibreOffice in Markdown-Tabellen umgewandelt, da pandoc xlsx nicht liest)
 mergedocs() {
     if [[ "${1:-}" == "-h" ]]; then
-        echo "Alle docx-Dateien im aktuellen Verzeichnis mit pandoc zu einer Markdown-Datei zusammenfuehren"
+        echo "Alle docx- und xlsx-Dateien im aktuellen Verzeichnis zu einer Markdown-Datei zusammenfuehren"
         echo "Usage: mergedocs [-d|--date] [output]"
         echo "  -d|--date  Datum an Dateinamen anhaengen (z.B. merged_2025-01-15.md)"
         echo "  output     Ausgabedatei (Standard: merged.md)"
+        echo "  xlsx wird ueber LibreOffice (soffice) in Markdown-Tabellen umgewandelt"
         echo "Example: mergedocs -d ergebnis.md"
         return 0
     fi
@@ -125,10 +127,11 @@ mergedocs() {
         output="${output%.md}_$(date +%Y-%m-%d).md"
     fi
 
-    local files=(*.docx)
+    local docx_files=(*.docx(N))
+    local xlsx_files=(*.xlsx(N))
 
-    if [[ ${#files[@]} -eq 0 ]]; then
-        echo "Fehler: Keine .docx-Dateien im aktuellen Verzeichnis gefunden"
+    if [[ ${#docx_files[@]} -eq 0 && ${#xlsx_files[@]} -eq 0 ]]; then
+        echo "Fehler: Keine .docx- oder .xlsx-Dateien im aktuellen Verzeichnis gefunden"
         return 1
     fi
 
@@ -137,14 +140,42 @@ mergedocs() {
         return 1
     fi
 
-    echo ">>> Konvertiere ${#files[@]} Dateien..."
-    pandoc -f docx -t markdown_strict "${files[@]}" -o "$output" --extract-media=./media
-    if [[ $? -ne 0 ]]; then
-        echo "FEHLER: Konvertierung fehlgeschlagen"
+    if [[ ${#xlsx_files[@]} -gt 0 ]] && ! command -v soffice &>/dev/null; then
+        echo "Fehler: soffice (LibreOffice) wird zum Konvertieren von .xlsx benoetigt, ist aber nicht installiert"
         return 1
     fi
 
-    echo "Fertig: $(wc -l < "$output") Zeilen in $output (${#files[@]} Dateien)"
+    : > "$output"
+
+    if [[ ${#docx_files[@]} -gt 0 ]]; then
+        echo ">>> Konvertiere ${#docx_files[@]} docx-Datei(en)..."
+        pandoc -f docx -t markdown_strict "${docx_files[@]}" --extract-media=./media >> "$output"
+        if [[ $? -ne 0 ]]; then
+            echo "FEHLER: docx-Konvertierung fehlgeschlagen"
+            return 1
+        fi
+    fi
+
+    if [[ ${#xlsx_files[@]} -gt 0 ]]; then
+        echo ">>> Konvertiere ${#xlsx_files[@]} xlsx-Datei(en)..."
+        local tmpdir
+        tmpdir=$(mktemp -d)
+        # Alle xlsx in einem soffice-Aufruf konvertieren (LibreOffice-Start ist langsam)
+        soffice --headless --convert-to html "${xlsx_files[@]}" --outdir "$tmpdir" >/dev/null 2>&1
+        local x html
+        for x in "${xlsx_files[@]}"; do
+            html="$tmpdir/${x:t:r}.html"
+            if [[ -f "$html" ]]; then
+                printf '\n\n# %s\n\n' "${x:t}" >> "$output"
+                pandoc -f html -t markdown_strict+pipe_tables "$html" >> "$output"
+            else
+                echo "WARNUNG: Konnte $x nicht konvertieren (uebersprungen)"
+            fi
+        done
+        rm -rf "$tmpdir"
+    fi
+
+    echo "Fertig: $(wc -l < "$output") Zeilen in $output (${#docx_files[@]} docx, ${#xlsx_files[@]} xlsx)"
 }
 
 # Video/Audio mit yt-dlp herunterladen
