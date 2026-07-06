@@ -15,7 +15,7 @@ restore_k8s() {
         echo "  list <app>         List archives for an app"
         echo "  clean              Delete the whole 'restore' namespace"
         echo "  --prod <app>       PROD-Restore mit Safeguards (Snapshot, scale-down/up, Dry-run+Confirm)"
-        echo "  <app>              App to restore (derzeit: paperless)"
+        echo "  <app>              App to restore (paperless, paperless-hbtest, nextcloud)"
         echo "  [archive]          Specific archive name (default: latest)"
         echo ""
         echo "Example: restore_k8s paperless"
@@ -78,15 +78,30 @@ restore_k8s() {
         return 1
     fi
 
-    # App-spezifische Parameter
-    local app_deploy secret_name
+    # App-spezifische Parameter. secret_kind steuert die Form des Laufzeit-Secrets
+    # weiter unten (paperless-ngx-Charts vs. nextcloud-Chart brauchen unterschiedliche
+    # Keys/Value-Shapes).
+    local app_deploy secret_name secret_kind
     case "$app" in
         paperless)
             app_deploy="paperless-ngx"
             secret_name="paperless-restore-secrets"
+            secret_kind="paperless"
+            ;;
+        paperless-hbtest)
+            # Helm-Fullname bei abweichendem Release-/Chart-Namen: <release>-<chart>
+            # (bestaetigt via kubectl in hb-test: deployment/paperless-hbtest-paperless-ngx)
+            app_deploy="paperless-hbtest-paperless-ngx"
+            secret_name="paperless-hbtest-restore-secrets"
+            secret_kind="paperless"
+            ;;
+        nextcloud)
+            app_deploy="nextcloud"
+            secret_name="nextcloud-restore-secrets"
+            secret_kind="nextcloud"
             ;;
         *)
-            echo "FEHLER: App '${app}' noch nicht unterstuetzt (nur paperless)"
+            echo "FEHLER: App '${app}' noch nicht unterstuetzt (paperless, paperless-hbtest, nextcloud)"
             return 1
             ;;
     esac
@@ -119,11 +134,24 @@ restore_k8s() {
         echo "    Erzeuge Laufzeit-Secret ${secret_name}..."
         local pw sk
         pw=$(openssl rand -hex 24)
-        sk=$(openssl rand -hex 50)
-        kubectl -n "$NS" create secret generic "$secret_name" \
-            --from-literal=POSTGRES_PASSWORD="$pw" \
-            --from-literal=PAPERLESS_DBPASS="$pw" \
-            --from-literal=PAPERLESS_SECRET_KEY="$sk" || return 1
+        case "$secret_kind" in
+            paperless)
+                sk=$(openssl rand -hex 50)
+                kubectl -n "$NS" create secret generic "$secret_name" \
+                    --from-literal=POSTGRES_PASSWORD="$pw" \
+                    --from-literal=PAPERLESS_DBPASS="$pw" \
+                    --from-literal=PAPERLESS_SECRET_KEY="$sk" || return 1
+                ;;
+            nextcloud)
+                # 'values' wird per valuesFrom in die HelmRelease gemergt
+                # (externalDatabase.password) - siehe restore/nextcloud/helmrelease.yaml.
+                kubectl -n "$NS" create secret generic "$secret_name" \
+                    --from-literal=POSTGRES_PASSWORD="$pw" \
+                    --from-literal=values="externalDatabase:
+  password: \"${pw}\"
+" || return 1
+                ;;
+        esac
     else
         echo "    Secret ${secret_name} existiert bereits (wiederverwenden)."
     fi
@@ -133,16 +161,16 @@ restore_k8s() {
     echo ">>> k8s: Daten-Layer (PVCs + Postgres)..."
     kubectl apply -f "${appdir}/pvcs.yaml" -f "${appdir}/db.yaml" || return 1
     echo "    Warte auf Postgres..."
-    kubectl -n "$NS" rollout status deploy/paperless-restore-db --timeout=180s || return 1
+    kubectl -n "$NS" rollout status "deploy/${app}-restore-db" --timeout=180s || return 1
 
     # Step 4: Restore-Runner (Dateien + DB laden)
     echo ""
     echo ">>> k8s: Restore-Runner (rsync + DB-Load)..."
-    kubectl -n "$NS" delete job paperless-restore-runner --ignore-not-found
+    kubectl -n "$NS" delete job "${app}-restore-runner" --ignore-not-found
     kubectl apply -f "${appdir}/restore-runner-job.yaml" || return 1
-    if ! kubectl -n "$NS" wait --for=condition=complete job/paperless-restore-runner --timeout=1h; then
+    if ! kubectl -n "$NS" wait --for=condition=complete "job/${app}-restore-runner" --timeout=1h; then
         echo "FEHLER: Restore-Runner nicht erfolgreich. Logs:"
-        kubectl -n "$NS" logs job/paperless-restore-runner --tail=40
+        kubectl -n "$NS" logs "job/${app}-restore-runner" --tail=40
         return 1
     fi
 
