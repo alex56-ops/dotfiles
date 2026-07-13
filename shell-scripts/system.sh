@@ -415,12 +415,33 @@ unblock() {
         return 1
     fi
 
-    if xattr -d com.apple.quarantine "/Applications/$1.app" 2>/dev/null; then
-        echo "Quarantäne entfernt: /Applications/$1.app"
-    elif xattr -d com.apple.quarantine "$1" 2>/dev/null; then
-        echo "Quarantäne entfernt: $1"
+    local target
+    if [[ -e "/Applications/$1.app" ]]; then
+        target="/Applications/$1.app"
+    elif [[ -e "$1" ]]; then
+        target="$1"
     else
         echo "App nicht gefunden: $1"
         return 1
     fi
+
+    local error_output
+    error_output=$(xattr -dr com.apple.quarantine "$target" 2>&1)
+    if [[ $? -eq 0 ]]; then
+        echo "Quarantäne entfernt: $target"
+        return 0
+    fi
+
+    if [[ "$error_output" == *"Permission denied"* ]]; then
+        echo "Keine Berechtigung, versuche mit sudo..."
+        if sudo xattr -dr com.apple.quarantine "$target"; then
+            echo "Quarantäne entfernt (sudo): $target"
+            return 0
+        fi
+        echo "Fehler: Quarantäne konnte auch mit sudo nicht entfernt werden: $target"
+        return 1
+    fi
+
+    echo "Fehler beim Entfernen der Quarantäne: $error_output"
+    return 1
 }
