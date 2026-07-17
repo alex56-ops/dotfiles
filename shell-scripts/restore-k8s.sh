@@ -129,6 +129,8 @@ restore_k8s() {
     kubectl apply -f "${REPO}/restore/namespace.yaml" || return 1
     sops -d "${REPO}/restore/runner-ssh-key.sops.yaml" | kubectl apply -f - || {
         echo "FEHLER: runner-ssh-key konnte nicht angewandt werden (SOPS/age?)"; return 1; }
+    sops -d "${REPO}/restore/regcred.sops.yaml" | kubectl apply -f - || {
+        echo "FEHLER: regcred konnte nicht angewandt werden (SOPS/age?)"; return 1; }
 
     if ! kubectl -n "$NS" get secret "$secret_name" >/dev/null 2>&1; then
         echo "    Erzeuge Laufzeit-Secret ${secret_name}..."
@@ -240,11 +242,14 @@ _restore_k8s_prod() {
     ssh nas "sudo -u recovery ${NAS_SCRIPT} ${NAS_HOST} ${app} ${archive}" || {
         echo "FEHLER: restore-push auf NAS fehlgeschlagen"; return 1; }
 
-    # SSH-Key-Secret in den Prod-NS (SOPS-Namespace ueberschreiben: restore -> ${ns})
+    # SSH-Key-Secret + Registry-Pull-Secret in den Prod-NS (SOPS-Namespace
+    # ueberschreiben: restore -> ${ns})
     echo ""
-    echo ">>> [2/7] SSH-Key-Secret nach '${ns}'..."
+    echo ">>> [2/7] SSH-Key-Secret + regcred nach '${ns}'..."
     sops -d "$keyfile" | sed "s/^\( *\)namespace: restore$/\1namespace: ${ns}/" \
         | kubectl apply -f - || { echo "FEHLER: runner-ssh-key (SOPS/age?)"; return 1; }
+    sops -d "${REPO}/restore/regcred.sops.yaml" | sed "s/^\( *\)namespace: restore$/\1namespace: ${ns}/" \
+        | kubectl apply -f - || { echo "FEHLER: regcred (SOPS/age?)"; return 1; }
 
     # Step 2: Dry-run / Diff - prueft v.a. dass das Backup NICHT leer ist (rsync --delete!)
     echo ""
@@ -262,19 +267,23 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      imagePullSecrets:
+        - name: restore-regcred
       containers:
         - name: inspect
-          image: postgres:18-alpine
+          # postgres18-alpine-rsync (internal-images): rsync/openssh-client
+          # fest im Image statt per apk zur Laufzeit (Muster wie
+          # restore/*/restore-runner-job.yaml).
+          image: gitea.home.lan/alex/internal-images/postgres18-alpine-rsync:main-1784307767-f4618ecf
           command: ["/bin/sh","-c"]
           args:
             - |
               set -eu
-              apk add --no-cache rsync openssh-client >/dev/null
               mkdir -p ~/.ssh && chmod 700 ~/.ssh
               cp /ssh-key/id_ed25519 ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
               ssh-keyscan -p 22 backup-ssh.backup.svc.cluster.local > ~/.ssh/known_hosts 2>/dev/null
               REMOTE="backup@backup-ssh.backup.svc.cluster.local:/mnt/backup/restore/${app}"
-              RSH="ssh -i ~/.ssh/id_ed25519"
+              RSH="ssh -i \$HOME/.ssh/id_ed25519 -o UserKnownHostsFile=\$HOME/.ssh/known_hosts"
               echo "--- Backup-Inhalt unter restore/${app}/ ---"
               rsync -n -a --stats -e "\$RSH" "\$REMOTE/" /tmp/probe/ 2>/dev/null \
                 | grep -Ei "number of files|total file size" \
