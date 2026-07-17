@@ -30,6 +30,9 @@ alias reset-update-timer='ssh server03 "sudo systemctl reset-failed ansible-auto
 alias win11rdp='xfreerdp /v:172.25.20.51 /u:admin /d:. /p:"$(security find-generic-password -a admin -s win11-datev-rdp -w)"'
 alias win11rdp-smartcard='xfreerdp /v:172.25.20.51 /u:admin /d:. /p:"$(security find-generic-password -a admin -s win11-datev-rdp -w)" /smartcard'
 
+# List VMs on dev-server-ansible (plain "virsh list" defaults to qemu:///session for this user and shows nothing)
+alias dev-server-vms='ssh dev-server-ansible "sudo virsh list --all"'
+
  #  Suffix Aliases
 
 # Archive
